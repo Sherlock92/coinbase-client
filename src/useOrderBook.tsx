@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, createContext, useContext } from 'react'
 
 // Custom hook for coinbase API connection.
-// Connects to the level 2 feed for btc and eth.
+// Connects to the level 2 feed for configured product id's.
 // Maintains the order book through the snapshot/updates
 // Coalescing/throttling of updates at 100ms
 
@@ -19,20 +19,15 @@ const useOrderBook = () => {
   const [orderBook, setOrderBook] = useState<OrderBook>({})
   const updatesQueue = useRef<any>([])
 
-  useEffect(() => {
-    setInterval(() => { setCounter(prevCounter => prevCounter + 1) }, 100)
-  }, [])
-
-  useEffect(() => {
+  const initializeWebSocket = () => {
     const ws = new WebSocket(process.env.REACT_APP_COINBASE_API || '')
-
     ws.onopen = () => {
       ws.send(JSON.stringify({
         type: 'subscribe',
         product_ids: JSON.parse(process.env.REACT_APP_PRODUCTS || ''),
         channels: ['level2'],
-      }))
-    }
+      }));
+    };
 
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data)
@@ -49,14 +44,31 @@ const useOrderBook = () => {
       } else if (message.type === 'l2update') {
         updatesQueue.current.push(message)
       }
-    }
-
+    };
+  
     ws.onerror = (error) => {
       console.log(error)
     }
+  
+    ws.onclose = () => {
+      console.log('Socket connection closed. Reinitializing in 3 seconds')
+      setTimeout(() => {
+        initializeWebSocket()
+      }, 3000)
+    }
 
+    return ws
+  }
+
+  useEffect(() => {
+    setInterval(() => { setCounter(prevCounter => prevCounter + 1) }, 100)
+  }, [])
+
+  useEffect(() => {
+    const ws = initializeWebSocket()
+  
     return () => {
-      ws.close();
+      ws.close()
     };
   }, [])
 

@@ -8,9 +8,7 @@ const root = ReactDOM.createRoot(
 )
 
 root.render(
-  <React.StrictMode>
-    <OrderBookProvider>
-      <App />
-    </OrderBookProvider>
-  </React.StrictMode>
+  <OrderBookProvider>
+    <App />
+  </OrderBookProvider>
 )
