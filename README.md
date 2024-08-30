@@ -1,7 +1,6 @@
 
 # Coinbase client
 
-### Example application for Eugene's test
 ----
 ### Quickstart
 
